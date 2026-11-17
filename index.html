@@ -34,10 +34,17 @@ button{cursor:pointer;border:none;border-radius:12px;font-size:17px;font-weight:
 .spin{display:inline-block;width:15px;height:15px;border:2px solid #fff6;border-top-color:#fff;border-radius:50%;animation:s .7s linear infinite;vertical-align:-2px;margin-right:8px}
 @keyframes s{to{transform:rotate(360deg)}}
 .hide{display:none}.note{font-size:12px;color:var(--mut);margin-top:6px}
+.ilan{display:flex;gap:10px;background:var(--p);border:1px solid var(--l);border-radius:12px;padding:10px;margin-bottom:8px}
+.ilan img{width:56px;height:56px;border-radius:9px;object-fit:cover;background:var(--p2);flex:0 0 auto}
+.ilanbilgi{flex:1;min-width:0}
+.ilanbas{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ilanalt{font-size:12px;color:var(--ac2);margin-top:2px}
+.ilandurum{font-size:12px;color:var(--mut);margin-top:3px}
 </style></head><body><div class="wrap">
 <header><div class="logo">🧵</div><div><h1>Dolap Yükleme Asistanı</h1><div class="sub">Her yerden • PC açılınca yüklenir</div></div></header>
 <div class="tabs">
   <div class="tab on" data-t="urun">Ürün</div>
+  <div class="tab" data-t="ilan">İlanlarım</div>
   <div class="tab" data-t="hesap">Hesap</div>
   <div class="tab mini" data-t="ayar">⚙</div>
 </div>
@@ -60,6 +67,16 @@ button{cursor:pointer;border:none;border-radius:12px;font-size:17px;font-weight:
     <div class="st" id="st"></div>
     <button class="go" id="yeni" style="display:none;background:var(--p2);border:1px solid var(--l)">+ Yeni ürün</button>
   </div>
+</div>
+
+<div id="ilan" class="hide">
+  <div class="card" style="padding:10px 12px">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <span style="font-size:13px;color:var(--mut)">Gönderdiğin ürünler</span>
+      <button id="temizle" style="width:auto;font-size:12px;padding:6px 10px;background:var(--p2);border:1px solid var(--l);color:var(--mut)">Listeyi temizle</button>
+    </div>
+  </div>
+  <div id="ilanlar"></div>
 </div>
 
 <div id="hesap" class="hide">
@@ -102,9 +119,41 @@ ayarDoldur();
 
 document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
   document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));t.classList.add('on');
-  ['urun','hesap','ayar'].forEach(id=>$(id).classList.add('hide'));
+  ['urun','ilan','hesap','ayar'].forEach(id=>$(id).classList.add('hide'));
   $(t.dataset.t).classList.remove('hide');
+  if(t.dataset.t==='ilan') cizGecmis();
 });
+
+// --- ilan gecmisi (bu telefonda saklanir) ---
+function esc(s){return(s||'').toString().replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));}
+function gecmisOku(){try{return JSON.parse(localStorage.getItem('da3_gecmis')||'[]')}catch(e){return[]}}
+function gecmisYaz(a){try{localStorage.setItem('da3_gecmis',JSON.stringify(a.slice(0,120)))}catch(e){}}
+function gecmisEkle(it){const a=gecmisOku();a.unshift(it);gecmisYaz(a);cizGecmis();}
+function gecmisDurum(pid,durum){const a=gecmisOku();const x=a.find(i=>i.pid===pid);if(x&&durum){x.durum=durum;gecmisYaz(a);cizGecmis();}}
+function cizGecmis(){const a=gecmisOku();const el=$('ilanlar');if(!el)return;
+  el.innerHTML=a.length?a.map(x=>`<div class="ilan"><img src="${x.thumb||''}">
+    <div class="ilanbilgi"><div class="ilanbas">${esc(x.not||'').slice(0,60)||'(ürün)'}</div>
+    <div class="ilanalt">${x.fiyat?esc(x.fiyat)+' TL':''}${x.boyut?' • '+esc(x.boyut):''}</div>
+    <div class="ilandurum">${esc(x.durum||'')}</div></div></div>`).join('')
+    :'<div class="note" style="text-align:center;padding:16px">Henüz ürün göndermedin.</div>';}
+function kucukThumb(dataUrl){return new Promise(res=>{const img=new Image();img.onload=()=>{
+  const m=90;let w=img.width,h=img.height;if(w>h){h=h*m/w;w=m}else{w=w*m/h;h=m}
+  const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);
+  res(c.toDataURL('image/jpeg',0.6));};img.onerror=()=>res('');img.src=dataUrl;});}
+const tmz=$('temizle');if(tmz)tmz.onclick=()=>{if(confirm('Liste temizlensin mi?')){gecmisYaz([]);cizGecmis();}};
+
+// PC'den gelen durumu dinle (<kanal>-durum)
+let durumSince=Math.floor(Date.now()/1000)-43200;
+async function durumPoll(){
+  try{
+    const r=await fetch('https://ntfy.sh/'+cfg.kanal+'-durum/json?poll=1&since='+durumSince);
+    const t=await r.text();const bas=Math.floor(Date.now()/1000);
+    t.split('\n').forEach(l=>{if(!l.trim())return;try{const ev=JSON.parse(l);
+      if(ev.event==='message'&&ev.title)gecmisDurum(ev.title,ev.message||'');}catch(e){}});
+    durumSince=bas;
+  }catch(e){}
+}
+setInterval(durumPoll,6000);durumPoll();
 
 function kargoSatici(f){ if(f<cfg.b1) return 0; if(f<cfg.b2) return +cfg.pay; return +cfg.tam; }
 function netHesap(f){ return f*(1-cfg.kom/100) - kargoSatici(f); }
@@ -172,7 +221,9 @@ async function gonder(){
       r=await fetch(base,{method:'PUT',headers:{'Title':pid,'Filename':'p'+i+'.jpg'},body:fotolar[i].blob});
       if(!r.ok) throw new Error('foto '+i+' '+r.status);
     }
-    durum('st','o','Gönderildi ✓'+(d?('  (Dolap fiyatı: '+d.liste+' TL)'):'')+'\nPC açıkken taslak oluşturulur.');
+    durum('st','o','Gönderildi ✓'+(d?('  (Dolap fiyatı: '+d.liste+' TL)'):'')+'\nPC açıkken taslak oluşturulur. "İlanlarım"dan takip et.');
+    try{const thumb=await kucukThumb(fotolar[0].url);
+      gecmisEkle({pid,time:Date.now(),fiyat:d?d.liste:'',boyut:$('boyut').value.trim(),not:$('not').value.trim(),thumb,durum:'⏳ Gönderildi'});}catch(e){}
     $('go').style.display='none';$('yeni').style.display='block';
   }catch(e){
     durum('st','e','Gönderilemedi: '+e.message+'\n(İnternet var mı? Kanal adı doğru mu?)');$('go').disabled=false;
