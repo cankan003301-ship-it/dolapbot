@@ -35,14 +35,13 @@ button{cursor:pointer;border:none;border-radius:12px;font-size:17px;font-weight:
 @keyframes s{to{transform:rotate(360deg)}}
 .hide{display:none}.note{font-size:12px;color:var(--mut);margin-top:6px}
 </style></head><body><div class="wrap">
-<header><div class="logo">🧵</div><div><h1>Dolap Yükleme Asistanı</h1><div class="sub">Her yerden, her zaman • PC açılınca yüklenir</div></div></header>
+<header><div class="logo">🧵</div><div><h1>Dolap Yükleme Asistanı</h1><div class="sub">Her yerden • PC açılınca yüklenir</div></div></header>
 <div class="tabs">
   <div class="tab on" data-t="urun">Ürün</div>
   <div class="tab" data-t="hesap">Hesap</div>
   <div class="tab mini" data-t="ayar">⚙</div>
 </div>
 
-<!-- URUN -->
 <div id="urun">
   <div class="card">
     <div class="pick" id="pick">📷 Fotoğrafları seç<br><span style="font-size:12px">(tek veya çoklu)</span></div>
@@ -63,33 +62,29 @@ button{cursor:pointer;border:none;border-radius:12px;font-size:17px;font-weight:
   </div>
 </div>
 
-<!-- HESAP -->
 <div id="hesap" class="hide">
   <div class="card">
     <label>Net fiyat — eline geçmesini istediğin (TL)</label>
     <input id="hnet" type="number" inputmode="numeric" placeholder="örn. 150" oninput="hesapGoster()">
     <div class="hesapkutu" id="hsonuc" style="margin-top:12px">Net fiyatı yaz, Dolap fiyatını hesaplayayım.</div>
-    <div class="note">Formül: komisyon ve kargo düşülünce elinde net kalsın diye Dolap fiyatı yükseltilir.</div>
+    <div class="note">Komisyon ve kargo düşülünce elinde net kalsın diye Dolap fiyatı yükseltilir.</div>
   </div>
 </div>
 
-<!-- AYAR -->
 <div id="ayar" class="hide">
   <div class="card">
     <h1 style="font-size:15px;margin:0 0 4px">Bağlantı</h1>
-    <label>Telegram Bot Token</label>
-    <input id="token" placeholder="BotFather'dan aldığın token">
-    <label>Chat ID</label>
-    <input id="chat" placeholder="1265055510">
-    <div class="note">Bir kez girilir, sadece bu telefonda saklanır.</div>
+    <label>Kanal adı (gizli — PC ile aynı olmalı)</label>
+    <input id="kanal">
+    <div class="note">Varsayılan hazır. Değiştirme (PC'deki ntfy_kanal.txt ile aynı olmalı).</div>
   </div>
   <div class="card">
     <h1 style="font-size:15px;margin:0 0 4px">Dolap Oranları (6 ayda bir güncelle)</h1>
     <label>Komisyon (%)</label><input id="o_kom" type="number" step="0.1">
-    <label>Kargo tam (TL) — ≥ üst barem</label><input id="o_tam" type="number" step="0.01">
+    <label>Kargo tam (TL) — üst barem üstü</label><input id="o_tam" type="number" step="0.01">
     <label>Kargo paylaşımlı (TL) — orta bant</label><input id="o_pay" type="number" step="0.01">
-    <label>Alt barem (TL) — altında kargo alıcı</label><input id="o_b1" type="number">
-    <label>Üst barem (TL) — üstünde kargo tam satıcı</label><input id="o_b2" type="number">
+    <label>Alt barem (TL)</label><input id="o_b1" type="number">
+    <label>Üst barem (TL)</label><input id="o_b2" type="number">
   </div>
   <button class="go" id="kaydet">💾 Kaydet</button>
   <div class="st" id="ayarst"></div>
@@ -98,28 +93,25 @@ button{cursor:pointer;border:none;border-radius:12px;font-size:17px;font-weight:
 
 <script>
 const $=i=>document.getElementById(i);
-const LS='da2';
-let cfg={token:'',chat:'1265055510',kom:18,tam:50.99,pay:29.99,b1:250,b2:400};
+const LS='da3';
+let cfg={kanal:'dolap-rp-7h3k9m2x8q4z',kom:18,tam:50.99,pay:29.99,b1:250,b2:400};
 try{cfg=Object.assign(cfg,JSON.parse(localStorage.getItem(LS)||'{}'))}catch(e){}
 function cfgYaz(){try{localStorage.setItem(LS,JSON.stringify(cfg))}catch(e){}}
-function ayarDoldur(){$('token').value=cfg.token;$('chat').value=cfg.chat;$('o_kom').value=cfg.kom;$('o_tam').value=cfg.tam;$('o_pay').value=cfg.pay;$('o_b1').value=cfg.b1;$('o_b2').value=cfg.b2;}
+function ayarDoldur(){$('kanal').value=cfg.kanal;$('o_kom').value=cfg.kom;$('o_tam').value=cfg.tam;$('o_pay').value=cfg.pay;$('o_b1').value=cfg.b1;$('o_b2').value=cfg.b2;}
 ayarDoldur();
 
-// --- sekmeler ---
 document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>{
   document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));t.classList.add('on');
   ['urun','hesap','ayar'].forEach(id=>$(id).classList.add('hide'));
   $(t.dataset.t).classList.remove('hide');
 });
 
-// --- hesaplama ---
 function kargoSatici(f){ if(f<cfg.b1) return 0; if(f<cfg.b2) return +cfg.pay; return +cfg.tam; }
 function netHesap(f){ return f*(1-cfg.kom/100) - kargoSatici(f); }
 function listeFiyati(net){
   if(!net||net<=0) return null;
   const k=cfg.kom/100; let ad=[];
-  const bandlar=[[0,+cfg.b1,0],[+cfg.b1,+cfg.b2,+cfg.pay],[+cfg.b2,1e9,+cfg.tam]];
-  for(const [low,high,kg] of bandlar){
+  for(const [low,high,kg] of [[0,+cfg.b1,0],[+cfg.b1,+cfg.b2,+cfg.pay],[+cfg.b2,1e9,+cfg.tam]]){
     let f=Math.ceil((net+kg)/(1-k)); if(f<low)f=low;
     if(f<high && netHesap(f)>=net-0.01) ad.push(f);
   }
@@ -128,39 +120,26 @@ function listeFiyati(net){
 }
 function dokum(net){
   const liste=listeFiyati(net); if(!liste) return null;
-  const kom=Math.round(liste*cfg.kom/100*100)/100;
-  const kg=kargoSatici(liste);
-  const gercekNet=Math.round((liste-kom-kg)*100)/100;
-  return {liste,kom,kg,net:gercekNet};
+  const kom=Math.round(liste*cfg.kom/100*100)/100, kg=kargoSatici(liste);
+  return {liste,kom,kg,net:Math.round((liste-kom-kg)*100)/100};
 }
-function netChanged(){
-  const n=parseFloat($('net').value);const d=dokum(n);const el=$('onizleme');
-  if(!d){el.style.display='none';return;}
-  el.style.display='block';
-  el.innerHTML=`<div class="satir"><span>Dolap'a yazılacak fiyat</span><b class="liste">${d.liste} TL</b></div>`+
-    `<div class="satir"><span>Komisyon (%${cfg.kom})</span><span>-${d.kom} TL</span></div>`+
-    `<div class="satir"><span>Kargo (senin payın)</span><span>-${d.kg} TL</span></div>`+
-    `<div class="satir net"><span>Eline geçecek</span><span>${d.net} TL</span></div>`;
-}
-function hesapGoster(){
-  const n=parseFloat($('hnet').value);const d=dokum(n);const el=$('hsonuc');
-  if(!d){el.innerHTML='Net fiyatı yaz, Dolap fiyatını hesaplayayım.';return;}
-  el.innerHTML=`<div class="satir"><span>Dolap'a yazılacak fiyat</span><b class="liste">${d.liste} TL</b></div>`+
-    `<div class="satir"><span>Komisyon (%${cfg.kom})</span><span>-${d.kom} TL</span></div>`+
-    `<div class="satir"><span>Kargo (senin payın)</span><span>-${d.kg} TL</span></div>`+
-    `<div class="satir net"><span>Yaklaşık kazancın</span><span>${d.net} TL</span></div>`;
-}
+function kutuHTML(d,sonEt){return `<div class="satir"><span>Dolap'a yazılacak fiyat</span><b class="liste">${d.liste} TL</b></div>`+
+  `<div class="satir"><span>Komisyon (%${cfg.kom})</span><span>-${d.kom} TL</span></div>`+
+  `<div class="satir"><span>Kargo (senin payın)</span><span>-${d.kg} TL</span></div>`+
+  `<div class="satir net"><span>${sonEt}</span><span>${d.net} TL</span></div>`;}
+function netChanged(){const d=dokum(parseFloat($('net').value));const el=$('onizleme');
+  if(!d){el.style.display='none';return;}el.style.display='block';el.innerHTML=kutuHTML(d,'Eline geçecek');}
+function hesapGoster(){const d=dokum(parseFloat($('hnet').value));const el=$('hsonuc');
+  el.innerHTML=d?kutuHTML(d,'Yaklaşık kazancın'):'Net fiyatı yaz, Dolap fiyatını hesaplayayım.';}
 
-// --- ayar kaydet ---
 $('kaydet').onclick=()=>{
-  cfg.token=$('token').value.trim();cfg.chat=$('chat').value.trim();
+  cfg.kanal=$('kanal').value.trim()||cfg.kanal;
   cfg.kom=parseFloat($('o_kom').value)||18;cfg.tam=parseFloat($('o_tam').value)||50.99;
   cfg.pay=parseFloat($('o_pay').value)||29.99;cfg.b1=parseFloat($('o_b1').value)||250;cfg.b2=parseFloat($('o_b2').value)||400;
   cfgYaz();durum('ayarst','o','Kaydedildi ✓');netChanged();hesapGoster();
 };
 
-// --- foto ---
-let fotolar=[]; // {blob,url}
+let fotolar=[];
 $('pick').onclick=()=>$('f').click();
 $('f').onchange=e=>ekle(e.target.files);
 async function ekle(list){for(const f of list){if(fotolar.length>=6)break;if(!f.type.startsWith('image/'))continue;try{fotolar.push(await kucult(f))}catch(e){}}ciz()}
@@ -171,37 +150,32 @@ c.toBlob(b=>res({blob:b,url:c.toDataURL('image/jpeg',0.8)}),'image/jpeg',0.82)};
 function ciz(){$('thumbs').innerHTML=fotolar.map((p,i)=>`<div class="th"><img src="${p.url}"><b data-i="${i}">×</b></div>`).join('');
 $('thumbs').querySelectorAll('b').forEach(b=>b.onclick=()=>{fotolar.splice(+b.dataset.i,1);ciz()});}
 
-// --- gonder ---
 $('go').onclick=gonder;
 async function gonder(){
-  if(!cfg.token||!cfg.chat){durum('st','e','Önce ⚙ Ayarlar\'dan Telegram token ve chat ID gir.');return;}
   if(!fotolar.length){durum('st','e','Fotoğraf seç.');return;}
-  const net=parseFloat($('net').value);const d=net?dokum(net):null;
-  const parcalar=[];
-  if(d) parcalar.push('Fiyat: '+d.liste+' TL');
-  if($('boyut').value.trim()) parcalar.push('Boyut: '+$('boyut').value.trim());
-  parcalar.push('Durum: '+$('durum').value);
-  if($('not').value.trim()) parcalar.push($('not').value.trim());
-  const caption=parcalar.join('\n');
+  const net=parseFloat($('net').value), d=net?dokum(net):null;
+  const parts=[]; if(d) parts.push('Fiyat: '+d.liste+' TL');
+  if($('boyut').value.trim()) parts.push('Boyut: '+$('boyut').value.trim());
+  parts.push('Durum: '+$('durum').value);
+  if($('not').value.trim()) parts.push($('not').value.trim());
+  const notText=parts.join('\n');
+  const pid='p'+Date.now()+Math.floor(Math.random()*1000);
+  const base='https://ntfy.sh/'+cfg.kanal;
   $('go').disabled=true;durum('st','i','<span class="spin"></span>Gönderiliyor...');
   try{
-    const api='https://api.telegram.org/bot'+cfg.token+'/';
-    if(fotolar.length===1){
-      const fd=new FormData();fd.append('chat_id',cfg.chat);fd.append('caption',caption);
-      fd.append('photo',fotolar[0].blob,'p.jpg');
-      const r=await fetch(api+'sendPhoto',{method:'POST',body:fd});const j=await r.json();
-      if(!j.ok)throw new Error(j.description||'gönderilemedi');
-    }else{
-      const fd=new FormData();fd.append('chat_id',cfg.chat);const media=[];
-      fotolar.forEach((p,i)=>{fd.append('f'+i,p.blob,'f'+i+'.jpg');media.push({type:'photo',media:'attach://f'+i,caption:i===0?caption:undefined});});
-      fd.append('media',JSON.stringify(media));
-      const r=await fetch(api+'sendMediaGroup',{method:'POST',body:fd});const j=await r.json();
-      if(!j.ok)throw new Error(j.description||'gönderilemedi');
+    // 1) meta (JSON metin)
+    let r=await fetch(base,{method:'POST',headers:{'Title':pid,'Tags':'meta'},
+      body:JSON.stringify({id:pid,n:fotolar.length,fiyat:d?d.liste:'',not:notText})});
+    if(!r.ok) throw new Error('meta '+r.status);
+    // 2) fotoğraflar (ek olarak)
+    for(let i=0;i<fotolar.length;i++){
+      r=await fetch(base,{method:'PUT',headers:{'Title':pid,'Filename':'p'+i+'.jpg'},body:fotolar[i].blob});
+      if(!r.ok) throw new Error('foto '+i+' '+r.status);
     }
-    durum('st','o','Gönderildi ✓'+(d?('  (Dolap fiyatı: '+d.liste+' TL)'):'')+'\nPC açıkken taslak oluşturulur, Telegram\'a haber gelir.');
+    durum('st','o','Gönderildi ✓'+(d?('  (Dolap fiyatı: '+d.liste+' TL)'):'')+'\nPC açıkken taslak oluşturulur.');
     $('go').style.display='none';$('yeni').style.display='block';
   }catch(e){
-    durum('st','e','Gönderilemedi: '+e.message+'\n(İnternet var mı? Token doğru mu?)');$('go').disabled=false;
+    durum('st','e','Gönderilemedi: '+e.message+'\n(İnternet var mı? Kanal adı doğru mu?)');$('go').disabled=false;
   }
 }
 $('yeni').onclick=()=>{fotolar=[];ciz();$('net').value='';$('boyut').value='';$('not').value='';$('onizleme').style.display='none';
