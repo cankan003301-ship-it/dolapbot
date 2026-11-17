@@ -40,6 +40,8 @@ button{cursor:pointer;border:none;border-radius:12px;font-size:17px;font-weight:
 .ilanbas{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ilanalt{font-size:12px;color:var(--ac2);margin-top:2px}
 .ilandurum{font-size:12px;color:var(--mut);margin-top:3px}
+.ilanbtn{display:flex;gap:6px;margin-top:7px}
+.ilanbtn button{width:auto;font-size:12px;font-weight:600;padding:6px 10px;background:var(--p2);border:1px solid var(--l);color:var(--ink)}
 </style></head><body><div class="wrap">
 <header><div class="logo">🧵</div><div><h1>Dolap Yükleme Asistanı</h1><div class="sub">Her yerden • PC açılınca yüklenir</div></div></header>
 <div class="tabs">
@@ -134,8 +136,24 @@ function cizGecmis(){const a=gecmisOku();const el=$('ilanlar');if(!el)return;
   el.innerHTML=a.length?a.map(x=>`<div class="ilan"><img src="${x.thumb||''}">
     <div class="ilanbilgi"><div class="ilanbas">${esc(x.not||'').slice(0,60)||'(ürün)'}</div>
     <div class="ilanalt">${x.fiyat?esc(x.fiyat)+' TL':''}${x.boyut?' • '+esc(x.boyut):''}</div>
-    <div class="ilandurum">${esc(x.durum||'')}</div></div></div>`).join('')
-    :'<div class="note" style="text-align:center;padding:16px">Henüz ürün göndermedin.</div>';}
+    <div class="ilandurum">${esc(x.durum||'')}</div>
+    <div class="ilanbtn"><button data-act="relist" data-pid="${x.pid}">↻ Tekrar gönder</button>
+    <button data-act="sablon" data-pid="${x.pid}">⎘ Şablon</button></div></div></div>`).join('')
+    :'<div class="note" style="text-align:center;padding:16px">Henüz ürün göndermedin.</div>';
+  el.querySelectorAll('button[data-act]').forEach(b=>b.onclick=()=>ilanAksiyon(b.dataset.act,b.dataset.pid));}
+function ilanAksiyon(act,pid){
+  const x=gecmisOku().find(i=>i.pid===pid);if(!x)return;
+  if(act==='relist'){
+    fetch('https://ntfy.sh/'+cfg.kanal,{method:'POST',body:'relist:'+pid})
+      .then(()=>gecmisDurum(pid,'⏳ Tekrar gönderildi'))
+      .catch(()=>alert('Gönderilemedi — internet var mı?'));
+  }else{
+    $('boyut').value=x.boyut||'';$('not').value=x.not||'';$('net').value='';
+    $('onizleme').style.display='none';
+    document.querySelector('.tab[data-t="urun"]').click();window.scrollTo(0,0);
+    alert('Şablon dolduruldu. Fotoğraf ve net fiyatı ekleyip gönder.');
+  }
+}
 function kucukThumb(dataUrl){return new Promise(res=>{const img=new Image();img.onload=()=>{
   const m=90;let w=img.width,h=img.height;if(w>h){h=h*m/w;w=m}else{w=w*m/h;h=m}
   const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);
