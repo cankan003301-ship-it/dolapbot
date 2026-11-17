@@ -2,7 +2,7 @@
 <html lang="tr"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
 <title>Dolap Asistanı</title><style>
-:root{--bg:#15130f;--p:#1f1c16;--p2:#272219;--l:#3a3328;--ink:#f3ead9;--mut:#b4a688;--ac:#e8632a;--ac2:#f0a23c;--ok:#4a9d6b;--dan:#c8503a}
+:root{--bg:#ffffff;--p:#ffffff;--p2:#f4f6f5;--l:#e8ecea;--ink:#2a2a30;--mut:#8a8f8c;--ac:#00b96b;--ac2:#36d78f;--ok:#00a862;--dan:#e23b3b}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,"Segoe UI",Roboto,sans-serif;font-size:16px}
 .wrap{max-width:560px;margin:0 auto;padding:14px 14px 100px}
 header{display:flex;align-items:center;gap:10px;margin:4px 0 12px}
@@ -12,7 +12,7 @@ h1{font-size:18px;margin:0}.sub{font-size:12px;color:var(--mut)}
 .tab{flex:1;text-align:center;padding:10px;border-radius:10px;background:var(--p2);color:var(--mut);font-weight:600;cursor:pointer;border:1px solid var(--l)}
 .tab.on{background:var(--ac);color:#fff;border-color:var(--ac)}
 .tab.mini{flex:0 0 46px}
-.card{background:var(--p);border:1px solid var(--l);border-radius:14px;padding:15px;margin-bottom:12px}
+.card{background:var(--p);border:1px solid var(--l);border-radius:14px;padding:15px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.05)}
 label{display:block;font-size:13px;color:var(--mut);margin:11px 0 5px}
 input,select,textarea{width:100%;background:var(--p2);color:var(--ink);border:1px solid var(--l);border-radius:10px;padding:12px;font-size:16px;font-family:inherit;outline:none}
 input:focus,textarea:focus,select:focus{border-color:var(--ac)}
@@ -30,8 +30,8 @@ button{cursor:pointer;border:none;border-radius:12px;font-size:17px;font-weight:
 .liste{color:var(--ac2);font-weight:700}
 .st{border-radius:12px;padding:13px;font-size:15px;margin-top:10px;display:none;white-space:pre-wrap}
 .st.show{display:block}.st.i{background:var(--p2);border:1px solid var(--l)}
-.st.o{background:#17311f;border:1px solid var(--ok);color:#bfe8cc}.st.e{background:#3a1d17;border:1px solid var(--dan);color:#f0b5a8}
-.spin{display:inline-block;width:15px;height:15px;border:2px solid #fff6;border-top-color:#fff;border-radius:50%;animation:s .7s linear infinite;vertical-align:-2px;margin-right:8px}
+.st.o{background:#e7f7ee;border:1px solid var(--ok);color:#13704a}.st.e{background:#fdecec;border:1px solid var(--dan);color:#b42318}
+.spin{display:inline-block;width:15px;height:15px;border:2px solid rgba(0,0,0,.15);border-top-color:var(--ac);border-radius:50%;animation:s .7s linear infinite;vertical-align:-2px;margin-right:8px}
 @keyframes s{to{transform:rotate(360deg)}}
 .hide{display:none}.note{font-size:12px;color:var(--mut);margin-top:6px}
 .ilan{display:flex;gap:10px;background:var(--p);border:1px solid var(--l);border-radius:12px;padding:10px;margin-bottom:8px}
