@@ -10,3 +10,7 @@
 .swarm/*.db
 .swarm/*.db.ruvector
 .claude/settings.json.bak-*
+.claude-flow/mods/session.json
+.claude-flow/policy/
+.claude-flow/protector-mod/
+.claude-flow/harness-active-policy.json
